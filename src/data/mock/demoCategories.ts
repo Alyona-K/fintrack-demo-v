@@ -7,102 +7,132 @@ export const demoCategories: Category[] = [
     name: "Software",
     type: "Expenses",
     userId: 1,
-    isDeleted: false
+    isDeleted: false,
   },
   {
     id: "food-groceries",
     name: "Food/Groceries",
     type: "Expenses",
     userId: 1,
-    isDeleted: false
+    isDeleted: false,
   },
   {
     id: "transport",
     name: "Transport",
     type: "Expenses",
     userId: 1,
-    isDeleted: false
+    isDeleted: false,
   },
   {
     id: "salary",
     name: "Salary",
     type: "Income",
     userId: 1,
-    isDeleted: false
+    isDeleted: false,
   },
   {
     id: "subscriptions",
     name: "Subscriptions",
     type: "Expenses",
     userId: 1,
-    isDeleted: false
+    isDeleted: false,
   },
   {
     id: "shopping-clothing",
     name: "Shopping/Clothing",
     type: "Expenses",
     userId: 1,
-    isDeleted: false
+    isDeleted: false,
   },
   {
     id: "health-fitness",
     name: "Health/Fitness",
     type: "Expenses",
     userId: 1,
-    isDeleted: false
+    isDeleted: false,
   },
   {
     id: "investments",
     name: "Investments",
     type: "Income",
     userId: 1,
-    isDeleted: false
+    isDeleted: false,
   },
   {
     id: "education",
     name: "Education/Courses",
     type: "Expenses",
     userId: 1,
-    isDeleted: false
+    isDeleted: false,
   },
   {
-    id: "18e3c6c6-164d-4589-9340-0eb9257a16f8",
+    id: "travel",
     name: "Travel",
     type: "Expenses",
     userId: 1,
-    isDeleted: false
+    isDeleted: false,
   },
   {
-    id: "5e92339c-a451-430f-aeb0-11d9ee5a3aa5",
+    id: "gifts",
     name: "Gifts",
     type: "Expenses",
     userId: 1,
-    isDeleted: false
+    isDeleted: false,
   },
   {
-    id: "a7f4cb59-77f6-4ce1-a307-849d8be8c278",
+    id: "rent",
     name: "Rent",
     type: "Expenses",
     userId: 1,
-    isDeleted: false
+    isDeleted: false,
   },
   {
-    id: "abad810f-f195-46ed-9c8f-6be7d9c6a0fc",
+    id: "cash",
     name: "Cash",
     type: "Expenses",
     userId: 1,
-    isDeleted: false
+    isDeleted: false,
   },
   {
-    id: "55610bb6-4056-423d-8d0f-43674e58823c",
-    name: "a",
-    type: "Income",
+    id: "daily-care",
+    name: "Daily care",
+    type: "Expenses",
     userId: 1,
-    isDeleted: true
-  }
+    isDeleted: false,
+  },
+  {
+    id: "d462cb3d-2b6b-419c-8d74-e557818b1fa9",
+    name: "Food",
+    type: "Expenses",
+    userId: 2,
+    isDeleted: false,
+  },
+  {
+    id: "817a62d7-ec60-40c8-ac27-0c3c59d60e9e",
+    name: "Salary",
+    type: "Income",
+    userId: 2,
+    isDeleted: false,
+  },
+  {
+    id: "b09bacdb-8007-47e5-9ed5-a07d83ec3d5a",
+    name: "Transport",
+    type: "Expenses",
+    userId: 2,
+    isDeleted: false,
+  },
+  {
+    id: "78a376b2-c18d-439d-84bf-ae7725646b20",
+    name: "Cash",
+    type: "Expenses",
+    userId: 2,
+    isDeleted: false,
+  },
 ];
 
 // Функция для получения категорий
 export const getDemoCategories = async (): Promise<Category[]> => {
-  return new Promise((resolve) => setTimeout(() => resolve(demoCategories), 200));
+  return new Promise((resolve) =>
+    setTimeout(() => resolve(demoCategories), 200)
+  );
 };
