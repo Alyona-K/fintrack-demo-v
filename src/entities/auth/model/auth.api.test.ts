@@ -1,99 +1,104 @@
-// // --- API MOCKS ---
-// jest.mock("@/shared/lib/api", () => ({
-//   api: {
-//     get: jest.fn(),
-//     post: jest.fn(),
-//     patch: jest.fn(),
-//     delete: jest.fn(),
-//   },
-// }));
-// jest.mock("@/entities/user/model/user.store");
+// --- MOCK USER STORE ---
+jest.mock("@/entities/user/model/user.store");
 
-// // --- IMPORTS ---
-// import { authApi } from "./auth.api";
-// import { api } from "@/shared/lib/api";
-// import { useUserStore } from "@/entities/user/model/user.store";
-// import {
-//   LoginCredentials,
-//   RegisterCredentials,
-//   AuthResponse,
-// } from "./auth.types";
-// import { User } from "@/entities/user/model/user.types";
+// --- IMPORTS ---
+import { authApi } from "./auth.api";
+import { useUserStore } from "@/entities/user/model/user.store";
+import type {
+  LoginCredentials,
+  RegisterCredentials,
+  AuthResponse,
+} from "./auth.types";
+import type { User } from "@/entities/user/model/user.types";
+import { demoUsers } from "@/data/mock/demoUsers";
 
-// // --- MOCK SETUP ---
-// const mockedApi = api as jest.Mocked<typeof api>;
-// const mockedUserStore = useUserStore as jest.Mocked<any>;
+const mockedUserStore = useUserStore as jest.Mocked<any>;
 
-// describe("auth.api", () => {
-//   const mockUser: User = {
-//     id: 1,
-//     firstName: "Alice",
-//     lastName: "Smith",
-//     email: "alice@test.com",
-//     avatar: "avatar.png",
-//     location: "NY",
-//   };
+describe("authApi (demo)", () => {
+  const testUser: User = {
+    id: 999,
+    email: "alice@test.com",
+    firstName: "Alice",
+    lastName: "Smith",
+    avatar: "avatar.png",
+    location: "NY",
+  };
 
-//   const mockAuthResponse: AuthResponse = {
-//     user: mockUser,
-//     accessToken: "token123",
-//   };
+  beforeEach(() => {
+    demoUsers.length = 0;
+    demoUsers.push(testUser);
 
-//   const mockLogin: LoginCredentials = {
-//     email: "alice@test.com",
-//     password: "password",
-//   };
+    // Мокаем setUser
+    mockedUserStore.getState.mockReturnValue({
+      user: null,
+      setUser: jest.fn(),
+    });
+  });
 
-//   const mockRegister: RegisterCredentials = {
-//     email: "alice@test.com",
-//     password: "password",
-//     firstName: "Alice",
-//     lastName: "Smith",
-//   };
+  // --- LOGIN ---
+  it("login sets user and returns AuthResponse", async () => {
+    const credentials: LoginCredentials = {
+      email: "alice@test.com",
+      password: "any-password",
+    };
 
-//   beforeEach(() => {
-//     jest.resetAllMocks();
-//     mockedUserStore.getState.mockReturnValue({ user: mockUser });
-//   });
+    const response: AuthResponse = await authApi.login(credentials);
 
-//   // --- LOGIN ---
-//   test("login returns AuthResponse", async () => {
-//     mockedApi.post.mockResolvedValueOnce({ data: mockAuthResponse });
-//     const result = await authApi.login(mockLogin);
-//     expect(result).toEqual(mockAuthResponse);
-//     expect(mockedApi.post).toHaveBeenCalledWith("/login", mockLogin);
-//   });
+    expect(response.user).toEqual(testUser);
+    expect(response.accessToken).toBe("demo-token");
+    expect(mockedUserStore.getState().setUser).toHaveBeenCalledWith(testUser);
+  });
 
-//   test("login throws if api fails", async () => {
-//     mockedApi.post.mockRejectedValueOnce(new Error("Login failed"));
-//     await expect(authApi.login(mockLogin)).rejects.toThrow("Login failed");
-//   });
+  it("login throws for invalid email", async () => {
+    const credentials: LoginCredentials = {
+      email: "wrong@test.com",
+      password: "123",
+    };
 
-//   // --- REGISTER ---
-//   test("register returns AuthResponse", async () => {
-//     mockedApi.post.mockResolvedValueOnce({ data: mockAuthResponse });
-//     const result = await authApi.register(mockRegister);
-//     expect(result).toEqual(mockAuthResponse);
-//     expect(mockedApi.post).toHaveBeenCalledWith("/register", mockRegister);
-//   });
+    await expect(authApi.login(credentials)).rejects.toThrow(
+      "Invalid credentials"
+    );
+  });
 
-//   test("register throws if api fails", async () => {
-//     mockedApi.post.mockRejectedValueOnce(new Error("Register failed"));
-//     await expect(authApi.register(mockRegister)).rejects.toThrow(
-//       "Register failed"
-//     );
-//   });
+  // --- REGISTER ---
+  it("register sets new user and returns AuthResponse", async () => {
+    const credentials: RegisterCredentials = {
+      email: "bob@test.com",
+      password: "pass",
+      firstName: "Bob",
+      lastName: "Builder",
+    };
 
-//   // --- GET CURRENT USER ---
-//   test("getCurrentUser returns user from store", async () => {
-//     const result = await authApi.getCurrentUser();
-//     expect(result).toEqual(mockUser);
-//   });
+    const response: AuthResponse = await authApi.register(credentials);
 
-//   test("getCurrentUser throws if no user in store", async () => {
-//     mockedUserStore.getState.mockReturnValue({ user: null });
-//     await expect(authApi.getCurrentUser()).rejects.toThrow(
-//       "User not logged in"
-//     );
-//   });
-// });
+    expect(response.user.email).toBe("bob@test.com");
+    expect(response.accessToken).toBe("demo-token");
+    expect(mockedUserStore.getState().setUser).toHaveBeenCalledWith(
+      response.user
+    );
+    expect(demoUsers.find((u) => u.email === "bob@test.com")).toBeTruthy();
+  });
+
+  // --- GET CURRENT USER ---
+  it("getCurrentUser returns user from store", async () => {
+    const mockedSetUser = jest.fn();
+    mockedUserStore.getState.mockReturnValue({
+      user: testUser,
+      setUser: mockedSetUser,
+    });
+
+    const user = await authApi.getCurrentUser();
+    expect(user).toEqual(testUser);
+  });
+
+  it("getCurrentUser throws if no user in store", async () => {
+    mockedUserStore.getState.mockReturnValue({
+      user: null,
+      setUser: jest.fn(),
+    });
+
+    await expect(authApi.getCurrentUser()).rejects.toThrow(
+      "User not logged in"
+    );
+  });
+});

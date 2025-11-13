@@ -1,6 +1,5 @@
 import { Category } from "@/entities/category/model/category.types";
 
-// Пример демо-категорий
 export const demoCategories: Category[] = [
   {
     id: "software",
@@ -130,7 +129,6 @@ export const demoCategories: Category[] = [
   },
 ];
 
-// Функция для получения категорий
 export const getDemoCategories = async (): Promise<Category[]> => {
   return new Promise((resolve) =>
     setTimeout(() => resolve(demoCategories), 200)

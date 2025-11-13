@@ -13,4 +13,3 @@ export const Providers = ({ children }: ProvidersProps) => {
     </ErrorBoundary>
   );
 };
-

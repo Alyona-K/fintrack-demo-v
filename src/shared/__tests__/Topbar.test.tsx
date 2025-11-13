@@ -1,7 +1,13 @@
 // --- MOCK EXTERNAL STORES AND COMPONENTS ---
-jest.mock("@/shared/store/useNotificationsStore", () => ({
-  useNotificationsStore: jest.fn(() => ({ notificationsCount: 5 })),
-}));
+jest.mock("@/shared/store/useNotificationsStore", () => {
+  const state = {
+    notificationsCount: 5,
+    reset: jest.fn(),
+  };
+  return {
+    useNotificationsStore: jest.fn((selector) => selector(state)),
+  };
+});
 
 jest.mock("@/entities/auth/model/auth.store", () => ({
   useAuthStore: jest.fn(() => ({

@@ -1,239 +1,164 @@
-// // --- MOCK API AND CONFIG ---
-// jest.mock("@/shared/lib/api", () => ({
-//   api: { get: jest.fn(), post: jest.fn(), patch: jest.fn(), delete: jest.fn() },
-// }));
-// jest.mock("@/shared/config/config", () => ({
-//   API_URL: "http://localhost:3001",
-// }));
+// --- MOCK user.store ---
+jest.mock("@/entities/user/model/user.store", () => ({
+  useUserStore: {
+    getState: () => ({
+      user: {
+        id: 1,
+        email: "user@test.com",
+        firstName: "Test",
+        lastName: "User",
+        avatar: "",
+      },
+    }),
+  },
+}));
 
-// // --- MOCK USER STORE ---
-// jest.mock("@/entities/user/model/user.store", () => ({
-//   useUserStore: {
-//     getState: () => ({
-//       user: {
-//         id: 1,
-//         email: "user@test.com",
-//         firstName: "Test",
-//         lastName: "User",
-//         avatar: "",
-//       },
-//       setUser: jest.fn(),
-//     }),
-//   },
-// }));
+// --- MOCK API ---
+jest.mock("./transaction.api", () => ({
+  transactionApi: {
+    getTransactions: jest.fn(),
+    createTransaction: jest.fn(),
+    updateTransaction: jest.fn(),
+    deleteTransaction: jest.fn(),
+  },
+}));
 
-// jest.mock("./transaction.api");
+import { act } from "@testing-library/react";
+import { useTransactionsStore } from "./transaction.store";
+import { transactionApi } from "./transaction.api";
+import { Transaction } from "./transaction.types";
 
-// import { act } from "@testing-library/react";
-// import { useTransactionsStore } from "./transaction.store";
-// import { Transaction } from "./transaction.types";
-// import {
-//   getTransactions,
-//   createTransaction,
-//   updateTransactionApi,
-//   deleteTransactionApi,
-// } from "./transaction.api";
+const mockedApi = transactionApi as jest.Mocked<typeof transactionApi>;
 
-// describe("Transactions Store", () => {
-//   const mockTransactions: Transaction[] = [
-//     {
-//       id: "1",
-//       amount: 100,
-//       categoryId: "a",
-//       date: "2025-11-01",
-//       type: "Income",
-//       description: "Salary",
-//       userId: 1,
-//     },
-//     {
-//       id: "2",
-//       amount: 50,
-//       categoryId: "b",
-//       date: "2025-11-02",
-//       type: "Expenses",
-//       description: "Groceries",
-//       userId: 1,
-//     },
-//     {
-//       id: "3",
-//       amount: 30,
-//       categoryId: "c",
-//       date: "2025-11-03",
-//       type: "Income",
-//       description: "Other",
-//       userId: 2,
-//     },
-//   ];
+describe("Transactions Store (Local Demo)", () => {
+  const mockTransactions: Transaction[] = [
+    {
+      id: "1",
+      amount: 100,
+      categoryId: "a",
+      date: "2025-11-01",
+      type: "Income",
+      description: "Salary",
+      userId: 1,
+    },
+    {
+      id: "2",
+      amount: 50,
+      categoryId: "b",
+      date: "2025-11-02",
+      type: "Expenses",
+      description: "Groceries",
+      userId: 1,
+    },
+    {
+      id: "3",
+      amount: 30,
+      categoryId: "c",
+      date: "2025-11-03",
+      type: "Income",
+      description: "Gift",
+      userId: 2,
+    },
+  ];
 
-//   beforeEach(() => {
-//     jest.clearAllMocks();
-//     useTransactionsStore.setState({ transactions: [], isLoading: false });
-//   });
+  beforeEach(() => {
+    jest.clearAllMocks();
+    useTransactionsStore.setState({ transactions: [], isLoading: false });
+  });
 
-//   // --- FETCH TRANSACTIONS ---
-//   it("should fetch transactions for current user", async () => {
-//     (getTransactions as jest.Mock).mockResolvedValue(mockTransactions);
+  // --- FETCH ---
+  it("fetches only current user's transactions", async () => {
+    mockedApi.getTransactions.mockResolvedValue(mockTransactions);
 
-//     await act(async () => {
-//       await useTransactionsStore.getState().fetchTransactions();
-//     });
+    await act(async () => {
+      await useTransactionsStore.getState().fetchTransactions();
+    });
 
-//     const state = useTransactionsStore.getState();
-//     expect(getTransactions).toHaveBeenCalled();
-//     expect(state.transactions).toHaveLength(2);
-//     expect(state.transactions[0].id).toBe("1");
-//     expect(state.transactions[1].id).toBe("2");
-//     expect(state.isLoading).toBe(false);
-//   });
+    const { transactions, isLoading } = useTransactionsStore.getState();
+    expect(mockedApi.getTransactions).toHaveBeenCalled();
+    expect(transactions).toHaveLength(2);
+    expect(transactions.every((t) => t.userId === 1)).toBe(true);
+    expect(isLoading).toBe(false);
+  });
 
-//   // --- ADD TRANSACTION ---
-//   it("should add a new transaction", async () => {
-//     const newTx: Transaction = {
-//       id: "4",
-//       amount: 200,
-//       categoryId: "a",
-//       date: "2025-11-04",
-//       type: "Income",
-//       description: "Bonus",
-//       userId: 1,
-//     };
-//     (createTransaction as jest.Mock).mockResolvedValue(newTx);
+  // --- ADD ---
+  it("adds a new transaction", async () => {
+    const newTx: Transaction = {
+      id: "4",
+      amount: 200,
+      categoryId: "d",
+      date: "2025-11-05",
+      type: "Income",
+      description: "Bonus",
+      userId: 1,
+    };
+    mockedApi.createTransaction.mockResolvedValue(newTx);
 
-//     let created: Transaction | undefined;
-//     await act(async () => {
-//       created = await useTransactionsStore.getState().addTransaction({
-//         amount: 200,
-//         categoryId: "a",
-//         date: "2025-11-04",
-//         type: "Income",
-//         description: "Bonus",
-//         userId: 1,
-//       });
-//     });
+    let created: Transaction | undefined;
+    await act(async () => {
+      created = await useTransactionsStore.getState().addTransaction({
+        amount: 200,
+        categoryId: "d",
+        date: "2025-11-05",
+        type: "Income",
+        description: "Bonus",
+        userId: 1,
+      });
+    });
 
-//     const state = useTransactionsStore.getState();
-//     expect(createTransaction).toHaveBeenCalledWith({
-//       amount: 200,
-//       categoryId: "a",
-//       date: "2025-11-04",
-//       type: "Income",
-//       description: "Bonus",
-//       userId: 1,
-//     });
-//     expect(state.transactions[0]).toEqual(newTx);
-//     expect(state.isLoading).toBe(false);
-//     expect(created).toEqual(newTx);
-//   });
+    const { transactions, isLoading } = useTransactionsStore.getState();
+    expect(mockedApi.createTransaction).toHaveBeenCalledWith({
+      amount: 200,
+      categoryId: "d",
+      date: "2025-11-05",
+      type: "Income",
+      description: "Bonus",
+      userId: 1,
+    });
+    expect(transactions[0]).toEqual(newTx);
+    expect(isLoading).toBe(false);
+    expect(created).toEqual(newTx);
+  });
 
-//   // --- UPDATE TRANSACTION ---
-//   it("should update an existing transaction", async () => {
-//     useTransactionsStore.setState({
-//       transactions: [
-//         {
-//           id: "1",
-//           amount: 100,
-//           categoryId: "a",
-//           date: "2025-11-01",
-//           type: "Income",
-//           description: "Salary",
-//           userId: 1,
-//         },
-//       ],
-//     });
+  // --- UPDATE ---
+  it("updates an existing transaction", async () => {
+    useTransactionsStore.setState({
+      transactions: [mockTransactions[0]],
+    });
 
-//     const updatedTx: Transaction = {
-//       id: "1",
-//       amount: 150,
-//       categoryId: "a",
-//       date: "2025-11-01",
-//       type: "Income",
-//       description: "Salary Updated",
-//       userId: 1,
-//     };
-//     (updateTransactionApi as jest.Mock).mockResolvedValue(updatedTx);
+    const updatedTx = { ...mockTransactions[0], amount: 150 };
+    mockedApi.updateTransaction.mockResolvedValue(updatedTx);
 
-//     let saved: Transaction | undefined;
-//     await act(async () => {
-//       saved = await useTransactionsStore
-//         .getState()
-//         .updateTransaction(updatedTx);
-//     });
+    await act(async () => {
+      await useTransactionsStore.getState().updateTransaction(updatedTx);
+    });
 
-//     const state = useTransactionsStore.getState();
-//     expect(updateTransactionApi).toHaveBeenCalledWith(updatedTx);
-//     expect(state.transactions[0].amount).toBe(150);
-//     expect(state.transactions[0].description).toBe("Salary Updated");
-//     expect(state.isLoading).toBe(false);
-//     expect(saved).toEqual(updatedTx);
-//   });
+    const { transactions } = useTransactionsStore.getState();
+    expect(mockedApi.updateTransaction).toHaveBeenCalledWith(updatedTx);
+    expect(transactions[0].amount).toBe(150);
+  });
 
-//   // --- DELETE TRANSACTION ---
-//   it("should delete a transaction by id", async () => {
-//     useTransactionsStore.setState({
-//       transactions: [
-//         {
-//           id: "1",
-//           amount: 100,
-//           categoryId: "a",
-//           date: "2025-11-01",
-//           type: "Income",
-//           description: "Salary",
-//           userId: 1,
-//         },
-//         {
-//           id: "2",
-//           amount: 50,
-//           categoryId: "b",
-//           date: "2025-11-02",
-//           type: "Expenses",
-//           description: "Groceries",
-//           userId: 1,
-//         },
-//       ],
-//     });
+  // --- DELETE ---
+  it("deletes a transaction", async () => {
+    useTransactionsStore.setState({
+      transactions: mockTransactions.slice(0, 2),
+    });
+    mockedApi.deleteTransaction.mockResolvedValue(mockTransactions[0]);
 
-//     (deleteTransactionApi as jest.Mock).mockResolvedValue(undefined);
+    await act(async () => {
+      await useTransactionsStore.getState().deleteTransaction("1");
+    });
 
-//     await act(async () => {
-//       await useTransactionsStore.getState().deleteTransaction("1");
-//     });
+    const { transactions } = useTransactionsStore.getState();
+    expect(mockedApi.deleteTransaction).toHaveBeenCalledWith("1");
+    expect(transactions).toHaveLength(1);
+    expect(transactions[0].id).toBe("2");
+  });
 
-//     const state = useTransactionsStore.getState();
-//     expect(deleteTransactionApi).toHaveBeenCalledWith("1");
-//     expect(state.transactions).toHaveLength(1);
-//     expect(state.transactions[0].id).toBe("2");
-//     expect(state.isLoading).toBe(false);
-//   });
-
-//   // --- CLEAR TRANSACTIONS ---
-//   it("should clear transactions", () => {
-//     useTransactionsStore.setState({
-//       transactions: [
-//         {
-//           id: "1",
-//           amount: 100,
-//           categoryId: "a",
-//           date: "2025-11-01",
-//           type: "Income",
-//           description: "Salary",
-//           userId: 1,
-//         },
-//         {
-//           id: "2",
-//           amount: 50,
-//           categoryId: "b",
-//           date: "2025-11-02",
-//           type: "Expenses",
-//           description: "Groceries",
-//           userId: 1,
-//         },
-//       ],
-//     });
-
-//     act(() => {
-//       useTransactionsStore.getState().clearTransactions();
-//     });
-
-//     expect(useTransactionsStore.getState().transactions).toEqual([]);
-//   });
-// });
+  // --- CLEAR ---
+  it("clears all transactions", () => {
+    useTransactionsStore.setState({ transactions: mockTransactions });
+    act(() => useTransactionsStore.getState().clearTransactions());
+    expect(useTransactionsStore.getState().transactions).toEqual([]);
+  });
+});

@@ -1,145 +1,107 @@
-// // --- MOCK API AND CONFIG ---
-// jest.mock("@/shared/lib/api", () => ({
-//   api: {
-//     get: jest.fn(),
-//     post: jest.fn(),
-//     patch: jest.fn(),
-//     delete: jest.fn(),
-//   },
-// }));
-// jest.mock("@/shared/config/config", () => ({
-//   API_URL: "http://localhost:3001",
-// }));
-// jest.mock("@/entities/user/model/user.store");
+jest.mock("@/entities/user/model/user.store");
 
-// import {
-//   getTransactions,
-//   createTransaction,
-//   updateTransactionApi,
-//   deleteTransactionApi,
-// } from "./transaction.api";
-// import { Transaction } from "./transaction.types";
-// import { api } from "@/shared/lib/api";
-// import { useUserStore } from "@/entities/user/model/user.store";
+import { transactionApi } from "./transaction.api";
+import { useUserStore } from "@/entities/user/model/user.store";
+import { demoTransactions } from "@/data/mock/demoTransactions";
+import type { Transaction } from "./transaction.types";
 
-// const mockedApi = api as jest.Mocked<typeof api>;
-// const mockedAuthStore = useUserStore as jest.Mocked<any>;
+const mockedUserStore = useUserStore as jest.Mocked<any>;
 
-// describe("transaction.api", () => {
-//   const mockTransaction: Transaction = {
-//     id: "1",
-//     amount: 100,
-//     categoryId: "1",
-//     date: "2025-10-12",
-//     description: "Groceries",
-//     type: "Expenses",
-//     userId: 1,
-//   };
+describe("transactionApi (demo)", () => {
+  const user = { id: 1, email: "demo@test.com" };
 
-//   const mockNewTransaction: Omit<Transaction, "id"> = {
-//     amount: 50,
-//     categoryId: "2",
-//     date: "2025-10-20",
-//     description: "Transport",
-//     type: "Expenses",
-//     userId: 1,
-//   };
+  const txBase: Omit<Transaction, "id"> = {
+    amount: 50,
+    categoryId: "2",
+    date: "2025-10-20",
+    description: "Transport",
+    type: "Expenses",
+    userId: user.id,
+  };
 
-//   beforeEach(() => {
-//     jest.resetAllMocks();
-//     mockedAuthStore.getState.mockReturnValue({ user: { id: 1 } });
-//   });
+  beforeEach(() => {
+    localStorage.clear();
+    jest.resetAllMocks();
+    mockedUserStore.getState.mockReturnValue({ user });
 
-//   // --- GET ---
-//   test("getTransactions returns array of transactions", async () => {
-//     mockedApi.get.mockResolvedValueOnce({ data: [mockTransaction] });
-//     const result = await getTransactions();
-//     expect(result).toEqual([mockTransaction]);
-//     expect(mockedApi.get).toHaveBeenCalledWith("/transactions");
-//   });
+    demoTransactions.length = 0;
+    demoTransactions.push({
+      id: "txn-1",
+      amount: 100,
+      categoryId: "1",
+      date: "2025-10-12",
+      description: "Groceries",
+      type: "Expenses",
+      userId: user.id,
+    });
+  });
 
-//   test("getTransactions returns empty array if no transactions", async () => {
-//     mockedApi.get.mockResolvedValueOnce({ data: [] });
-//     const result = await getTransactions();
-//     expect(result).toEqual([]);
-//   });
+  // --- GET ---
+  it("getTransactions returns list from demoTransactions if localStorage empty", async () => {
+    const result = await transactionApi.getTransactions();
+    expect(result).toEqual(demoTransactions);
+  });
 
-//   test("getTransactions throws if api fails", async () => {
-//     mockedApi.get.mockRejectedValueOnce(new Error("Server error"));
-//     await expect(getTransactions()).rejects.toThrow("Server error");
-//   });
+  it("getTransactions loads from localStorage if present", async () => {
+    const stored = [
+      { ...demoTransactions[0], id: "txn-999", description: "Stored TX" },
+    ];
+    localStorage.setItem("demoTransactions", JSON.stringify(stored));
+    const result = await transactionApi.getTransactions();
+    expect(result).toEqual(stored);
+  });
 
-//   // --- CREATE ---
-//   test("createTransaction posts a new transaction successfully", async () => {
-//     mockedApi.post.mockResolvedValueOnce({
-//       data: { ...mockNewTransaction, id: "2" },
-//     });
-//     const result = await createTransaction(mockNewTransaction);
-//     expect(result).toEqual({ ...mockNewTransaction, id: "2" });
-//     expect(mockedApi.post).toHaveBeenCalledWith("/transactions", {
-//       ...mockNewTransaction,
-//       userId: 1,
-//     });
-//   });
+  // --- CREATE ---
+  it("createTransaction adds new transaction and saves to localStorage", async () => {
+    const result = await transactionApi.createTransaction(txBase);
+    const stored = JSON.parse(localStorage.getItem("demoTransactions")!);
 
-//   test("createTransaction throws if api fails", async () => {
-//     mockedApi.post.mockRejectedValueOnce(new Error("Create failed"));
-//     await expect(createTransaction(mockNewTransaction)).rejects.toThrow(
-//       "Create failed"
-//     );
-//   });
+    expect(result).toMatchObject(txBase);
+    expect(result).toHaveProperty("id");
+    expect(stored.find((t: any) => t.id === result.id)).toBeTruthy();
+  });
 
-//   // --- UPDATE ---
-//   test("updateTransactionApi updates transaction successfully", async () => {
-//     mockedApi.patch.mockResolvedValueOnce({ data: mockTransaction });
-//     const result = await updateTransactionApi(mockTransaction);
-//     expect(result).toEqual(mockTransaction);
-//     expect(mockedApi.patch).toHaveBeenCalledWith(
-//       `/transactions/${mockTransaction.id}`,
-//       mockTransaction
-//     );
-//   });
+  it("createTransaction throws if user not logged in", async () => {
+    mockedUserStore.getState.mockReturnValue({ user: null });
+    await expect(transactionApi.createTransaction(txBase)).rejects.toThrow(
+      "User not logged in"
+    );
+  });
 
-//   test("updateTransactionApi throws if api fails", async () => {
-//     mockedApi.patch.mockRejectedValueOnce(new Error("Update failed"));
-//     await expect(updateTransactionApi(mockTransaction)).rejects.toThrow(
-//       "Update failed"
-//     );
-//   });
+  // --- UPDATE ---
+  it("updateTransaction modifies existing transaction", async () => {
+    const existing = demoTransactions[0];
+    localStorage.setItem("demoTransactions", JSON.stringify([existing]));
 
-//   // --- DELETE ---
-//   test("deleteTransactionApi deletes transaction successfully", async () => {
-//     mockedApi.delete.mockResolvedValueOnce({ data: mockTransaction });
-//     const result = await deleteTransactionApi(mockTransaction.id);
-//     expect(result).toEqual(mockTransaction);
-//     expect(mockedApi.delete).toHaveBeenCalledWith(
-//       `/transactions/${mockTransaction.id}`
-//     );
-//   });
+    const updated = { ...existing, description: "Updated" };
+    const result = await transactionApi.updateTransaction(updated);
 
-//   test("deleteTransactionApi throws if api fails", async () => {
-//     mockedApi.delete.mockRejectedValueOnce(new Error("Delete failed"));
-//     await expect(deleteTransactionApi(mockTransaction.id)).rejects.toThrow(
-//       "Delete failed"
-//     );
-//   });
+    expect(result.description).toBe("Updated");
+    const stored = JSON.parse(localStorage.getItem("demoTransactions")!);
+    expect(stored[0].description).toBe("Updated");
+  });
 
-//   // --- EDGE CASES ---
-//   test("createTransaction with invalid amount throws error", async () => {
-//     const invalidTx = { ...mockNewTransaction, amount: -10 };
-//     mockedApi.post.mockRejectedValueOnce(new Error("Invalid amount"));
-//     await expect(createTransaction(invalidTx)).rejects.toThrow(
-//       "Invalid amount"
-//     );
-//   });
+  it("updateTransaction throws if not found", async () => {
+    await expect(
+      transactionApi.updateTransaction({ ...txBase, id: "fake-id" })
+    ).rejects.toThrow("Transaction not found");
+  });
 
-//   test("updateTransactionApi with missing id throws immediately", async () => {
-//     const invalidTx: Omit<Transaction, "id"> = {
-//       ...mockNewTransaction,
-//     };
+  // --- DELETE ---
+  it("deleteTransaction removes transaction and returns deleted one", async () => {
+    const existing = demoTransactions[0];
+    localStorage.setItem("demoTransactions", JSON.stringify([existing]));
 
-//     await expect(updateTransactionApi(invalidTx as any)).rejects.toThrow(
-//       "Transaction ID is required"
-//     );
-//   });
-// });
+    const deleted = await transactionApi.deleteTransaction(existing.id);
+    const stored = JSON.parse(localStorage.getItem("demoTransactions")!);
+
+    expect(deleted.id).toBe(existing.id);
+    expect(stored).toHaveLength(0);
+  });
+
+  it("deleteTransaction throws if transaction not found", async () => {
+    await expect(transactionApi.deleteTransaction("fake-id")).rejects.toThrow(
+      "Transaction not found"
+    );
+  });
+});

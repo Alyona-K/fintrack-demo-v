@@ -1,11 +1,3 @@
-// --- MOCK API AND CONFIG ---
-jest.mock("@/shared/lib/api", () => ({
-  api: { get: jest.fn(), post: jest.fn(), patch: jest.fn(), delete: jest.fn() },
-}));
-jest.mock("@/shared/config/config", () => ({
-  API_URL: "http://localhost:3001",
-}));
-
 // --- MOCK STORE FOR TESTING ---
 const fetchTransactionsMock = jest.fn();
 

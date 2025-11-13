@@ -1,141 +1,141 @@
-// jest.mock("@/shared/lib/api", () => ({
-//   api: {
-//     get: jest.fn(),
-//     post: jest.fn(),
-//     put: jest.fn(),
-//     patch: jest.fn(),
-//     delete: jest.fn(),
-//   },
-// }));
-// jest.mock("@/shared/config/config", () => ({
-//   API_URL: "http://localhost:3001",
-// }));
-// jest.mock("@/entities/user/model/user.store");
+jest.mock("@/entities/user/model/user.store", () => ({
+  useUserStore: {
+    getState: jest.fn(),
+  },
+}));
 
-// import {
-//   createCategory,
-//   updateCategoryApi,
-//   getCategories,
-//   deleteCategoryApi,
-// } from "./category.api";
-// import { Category } from "./category.types";
-// import { api } from "@/shared/lib/api";
-// import { useUserStore } from "@/entities/user/model/user.store";
+import { categoryApi } from "./category.api";
+import { Category } from "./category.types";
+import { useUserStore } from "@/entities/user/model/user.store";
+import { demoCategories } from "@/data/mock/demoCategories";
 
-// const mockedApi = api as jest.Mocked<typeof api>;
-// const mockedAuthStore = useUserStore as jest.Mocked<any>;
+const mockedUserStore = useUserStore as jest.Mocked<typeof useUserStore>;
 
-// describe("Category API – with auth integration", () => {
-//   const mockCategory: Category = {
-//     id: "1",
-//     name: "Food",
-//     type: "Expenses",
-//     userId: 1,
-//   };
+describe("categoryApi (demo)", () => {
+  const STORAGE_KEY = "demoCategories";
 
-//   const mockNewCategory: Omit<Category, "id"> = {
-//     name: "Salary",
-//     type: "Income",
-//     userId: 1,
-//   };
+  const mockUser = {
+    id: 1,
+    firstName: "Alice",
+    lastName: "Smith",
+    email: "user@test.com",
+    avatar: "avatar.png",
+    location: "NY",
+  };
 
-//   beforeEach(() => {
-//     jest.resetAllMocks();
-//     mockedAuthStore.getState.mockReturnValue({ user: { id: 1 } });
-//   });
+  beforeEach(() => {
+    localStorage.clear();
+    jest.clearAllMocks();
+    mockedUserStore.getState.mockReturnValue({
+      user: mockUser,
+      fetchUser: jest.fn(),
+      updateUser: jest.fn(),
+      setUser: jest.fn(),
+    });
+  });
 
-//   // --- CREATE ---
-//   describe("createCategory", () => {
-//     test("posts a new category with userId from auth store", async () => {
-//       mockedApi.post.mockResolvedValueOnce({
-//         data: { ...mockNewCategory, id: "2" },
-//       });
+  describe("getCategories", () => {
+    it("returns sorted and filtered categories", async () => {
+      localStorage.setItem(
+        "demoCategories",
+        JSON.stringify([
+          { id: "1", name: "Salary", type: "Income", isDeleted: false },
+          { id: "2", name: "Food", type: "Expenses", isDeleted: false },
+          { id: "3", name: "Old", type: "Expenses", isDeleted: true },
+        ])
+      );
 
-//       const result = await createCategory({
-//         name: "Salary",
-//         type: "Income",
-//       } as any);
+      const result = await categoryApi.getCategories();
+      const names = result.map((c) => c.name);
+      expect(names).toEqual(["Food", "Salary"]);
+    });
 
-//       expect(result).toEqual({ ...mockNewCategory, id: "2" });
-//       expect(mockedApi.post).toHaveBeenCalledWith("/categories", {
-//         name: "Salary",
-//         type: "Income",
-//         userId: 1,
-//       });
-//     });
+    it("returns demoCategories if storage empty", async () => {
+      localStorage.removeItem(STORAGE_KEY);
+      const result = await categoryApi.getCategories();
+      expect(result).toEqual(expect.arrayContaining(demoCategories));
+    });
+  });
 
-//     test("throws if no user in auth store", async () => {
-//       mockedAuthStore.getState.mockReturnValue({ user: null });
-//       await expect(
-//         createCategory({ name: "Salary", type: "Income" } as any)
-//       ).rejects.toThrow("User not logged in");
-//     });
-//   });
+  describe("createCategory", () => {
+    it("creates a new category and saves to storage", async () => {
+      const newCategory = { name: "Bonus", type: "Income" };
+      const result = await categoryApi.createCategory(newCategory as any);
 
-//   // --- UPDATE ---
-//   describe("updateCategoryApi", () => {
-//     test("updates category successfully", async () => {
-//       mockedApi.put.mockResolvedValueOnce({ data: mockCategory });
-//       const result = await updateCategoryApi(mockCategory);
-//       expect(result).toEqual(mockCategory);
-//       expect(mockedApi.put).toHaveBeenCalledWith(
-//         `/categories/${mockCategory.id}`,
-//         mockCategory
-//       );
-//     });
+      const stored = JSON.parse(localStorage.getItem(STORAGE_KEY)!);
+      expect(result.name).toBe("Bonus");
+      expect(result.userId).toBe(1);
+      expect(stored.some((c: Category) => c.id === result.id)).toBe(true);
+    });
 
-//     test("throws if id is missing", async () => {
-//       const invalidCategory = { ...mockNewCategory } as any;
-//       await expect(updateCategoryApi(invalidCategory)).rejects.toThrow(
-//         "Category id is required"
-//       );
-//     });
+    it("throws if user not logged in", async () => {
+      mockedUserStore.getState.mockReturnValue({
+        user: null,
+        fetchUser: jest.fn(),
+        updateUser: jest.fn(),
+        setUser: jest.fn(),
+      });
 
-//     test("throws if name is empty", async () => {
-//       const invalidCategory = { ...mockCategory, name: "" };
-//       await expect(updateCategoryApi(invalidCategory)).rejects.toThrow(
-//         "Name is required"
-//       );
-//     });
+      await expect(
+        categoryApi.createCategory({ name: "Test", type: "Income" } as any)
+      ).rejects.toThrow("User not logged in");
+    });
+  });
 
-//     test("throws if type is invalid", async () => {
-//       const invalidCategory = { ...mockCategory, type: "Unknown" as any };
-//       await expect(updateCategoryApi(invalidCategory)).rejects.toThrow(
-//         "Invalid type"
-//       );
-//     });
-//   });
+  describe("updateCategory", () => {
+    it("updates existing category", async () => {
+      localStorage.setItem(
+        "demoCategories",
+        JSON.stringify([
+          { id: "1", name: "Food", type: "Expenses", isDeleted: false },
+        ])
+      );
 
-//   // --- DELETE ---
-//   describe("deleteCategoryApi", () => {
-//     test("deletes category successfully", async () => {
-//       mockedApi.delete.mockResolvedValueOnce({ data: mockCategory });
-//       const result = await deleteCategoryApi(mockCategory.id);
-//       expect(result).toEqual(mockCategory);
-//       expect(mockedApi.delete).toHaveBeenCalledWith(
-//         `/categories/${mockCategory.id}`
-//       );
-//     });
-//   });
+      const updated: Category = {
+        id: "1",
+        name: "Updated Food",
+        type: "Expenses",
+        userId: 1,
+        isDeleted: false,
+      };
+      const result = await categoryApi.updateCategory(updated);
 
-//   // --- GET ---
-//   describe("getCategories", () => {
-//     test("returns sorted array of categories", async () => {
-//       const unsorted: Category[] = [
-//         { ...mockCategory, name: "Zebra" },
-//         { ...mockCategory, name: "Apple" },
-//       ];
-//       mockedApi.get.mockResolvedValueOnce({ data: unsorted });
+      expect(result.name).toBe("Updated Food");
+    });
 
-//       const result = await getCategories();
-//       expect(result.map((c) => c.name)).toEqual(["Apple", "Zebra"]);
-//       expect(mockedApi.get).toHaveBeenCalledWith("/categories");
-//     });
+    it("throws if category not found", async () => {
+      const missing = {
+        id: "999",
+        name: "Unknown",
+        type: "Expenses",
+        userId: 1,
+      };
+      await expect(categoryApi.updateCategory(missing as any)).rejects.toThrow(
+        "Category not found"
+      );
+    });
+  });
 
-//     test("works with empty array", async () => {
-//       mockedApi.get.mockResolvedValueOnce({ data: [] });
-//       const result = await getCategories();
-//       expect(result).toEqual([]);
-//     });
-//   });
-// });
+  describe("deleteCategory", () => {
+    it("marks category as deleted", async () => {
+      localStorage.setItem(
+        "demoCategories",
+        JSON.stringify([
+          { id: "1", name: "Rent", type: "Expenses", isDeleted: false },
+        ])
+      );
+
+      const result = await categoryApi.deleteCategory("1");
+
+      expect(result.isDeleted).toBe(true);
+      const stored = JSON.parse(localStorage.getItem("demoCategories")!);
+      expect(stored[0].isDeleted).toBe(true);
+    });
+
+    it("throws if category not found", async () => {
+      await expect(categoryApi.deleteCategory("999")).rejects.toThrow(
+        "Category not found"
+      );
+    });
+  });
+});

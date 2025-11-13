@@ -41,7 +41,9 @@ export const useCategoriesStore = create<CategoriesState>((set, get) => ({
     try {
       const created = await categoryApi.createCategory(category);
       set((state) => ({
-        categories: [created, ...state.categories],
+        categories: [...state.categories, created].sort((a, b) =>
+          a.name.localeCompare(b.name)
+        ),
       }));
       return created;
     } catch (e) {
@@ -57,9 +59,9 @@ export const useCategoriesStore = create<CategoriesState>((set, get) => ({
     try {
       const updated = await categoryApi.updateCategory(category);
       set((state) => ({
-        categories: state.categories.map((c) =>
-          c.id === updated.id ? updated : c
-        ),
+        categories: state.categories
+          .map((c) => (c.id === updated.id ? updated : c))
+          .sort((a, b) => a.name.localeCompare(b.name)),
       }));
       return updated;
     } catch (e) {
@@ -87,211 +89,3 @@ export const useCategoriesStore = create<CategoriesState>((set, get) => ({
 
   clearCategories: () => set({ categories: [] }),
 }));
-
-//---------------
-
-// import { create } from "zustand";
-// import { persist } from "zustand/middleware";
-// import { localStorageAdapter } from "@/shared/lib/persistAdapter";
-// import { Category } from "./category.types";
-// import { useUserStore } from "@/entities/user/model/user.store";
-// import { categoryApi } from "./category.api";
-
-// type CategoriesState = {
-//   categories: Category[];
-//   isLoading: boolean;
-//   fetchCategories: () => Promise<void>;
-//   addCategory: (category: Omit<Category, "id">) => Promise<Category>;
-//   updateCategory: (category: Category) => Promise<Category>;
-//   deleteCategory: (id: string) => Promise<void>;
-//   clearCategories: () => void;
-// };
-
-// export const useCategoriesStore = create<CategoriesState>()(
-//   persist(
-//     (set, get) => ({
-//       categories: [],
-//       isLoading: false,
-
-//       fetchCategories: async () => {
-//         set({ isLoading: true });
-//         try {
-//           const user = useUserStore.getState().user;
-//           if (!user) {
-//             set({ categories: [] });
-//             return;
-//           }
-
-//           const data = await categoryApi.getCategories();
-//           const filtered = data.filter((cat) => cat.userId === user.id);
-//           set({ categories: filtered });
-//         } catch (e) {
-//           console.error("Error fetching categories:", e);
-//         } finally {
-//           set({ isLoading: false });
-//         }
-//       },
-
-//       addCategory: async (category) => {
-//         set({ isLoading: true });
-//         try {
-//           const created = await categoryApi.createCategory(category);
-//           set((state) => ({
-//             categories: [...state.categories, created].sort((a, b) =>
-//               a.name.localeCompare(b.name)
-//             ),
-//           }));
-//           return created;
-//         } catch (e) {
-//           console.error("Error adding category:", e);
-//           throw e;
-//         } finally {
-//           set({ isLoading: false });
-//         }
-//       },
-
-//       updateCategory: async (category) => {
-//         if (!category.id) throw new Error("Category ID is required for update");
-//         set({ isLoading: true });
-//         try {
-//           const updated = await categoryApi.updateCategory(category);
-//           set((state) => ({
-//             categories: state.categories
-//               .map((c) => (c.id === updated.id ? updated : c))
-//               .sort((a, b) => a.name.localeCompare(b.name)),
-//           }));
-//           return updated;
-//         } catch (e) {
-//           console.error("Error updating category:", e);
-//           throw e;
-//         } finally {
-//           set({ isLoading: false });
-//         }
-//       },
-
-//       deleteCategory: async (id) => {
-//         set({ isLoading: true });
-//         try {
-//           await categoryApi.deleteCategory(id);
-//           set((state) => ({
-//             categories: state.categories.filter((c) => c.id !== id),
-//           }));
-//         } catch (e) {
-//           console.error("Error deleting category:", e);
-//           throw e;
-//         } finally {
-//           set({ isLoading: false });
-//         }
-//       },
-
-//       clearCategories: () => set({ categories: [] }),
-//     }),
-//     {
-//       name: "categories-storage", // ключ в localStorage
-//       storage: localStorageAdapter<CategoriesState>(), // универсальный адаптер
-//     }
-//   )
-// );
-
-
-
-//------------------
-
-
-
-// import { create } from "zustand";
-// import { Category } from "./category.types";
-// import { useUserStore } from "@/entities/user/model/user.store";
-// import {
-//   getCategories,
-//   createCategory,
-//   updateCategoryApi,
-//   deleteCategoryApi,
-// } from "./category.api";
-
-// type CategoriesState = {
-//   categories: Category[];
-//   isLoading: boolean;
-//   fetchCategories: () => Promise<void>;
-//   addCategory: (category: Omit<Category, "id">) => Promise<void>;
-//   updateCategory: (category: Category) => Promise<void>;
-//   deleteCategory: (id: string) => Promise<void>;
-//   clearCategories: () => void;
-// };
-
-// export const useCategoriesStore = create<CategoriesState>((set) => ({
-//   categories: [],
-//   isLoading: false,
-
-//   fetchCategories: async () => {
-//     set({ isLoading: true });
-//     try {
-//       const user = useUserStore.getState().user;
-//       if (!user) {
-//         console.warn("[CategoriesStore] No user, skipping fetchCategories");
-//         set({ categories: [] });
-//         return;
-//       }
-
-//       const data = await getCategories();
-//       const filtered = data
-//         .filter((cat) => cat.userId === user.id)
-//         .sort((a, b) => a.name.localeCompare(b.name));
-
-//       set({ categories: filtered });
-//     } catch (e) {
-//       console.error("Error fetching categories:", e);
-//     } finally {
-//       set({ isLoading: false });
-//     }
-//   },
-
-//   addCategory: async (category) => {
-//     set({ isLoading: true });
-//     try {
-//       const created = await createCategory(category);
-//       set((state) => ({
-//         categories: [...state.categories, created].sort((a, b) =>
-//           a.name.localeCompare(b.name)
-//         ),
-//       }));
-//     } catch (e) {
-//       console.error("Error adding category:", e);
-//     } finally {
-//       set({ isLoading: false });
-//     }
-//   },
-
-//   updateCategory: async (category) => {
-//     if (!category.id) throw new Error("Category ID is required for update");
-//     set({ isLoading: true });
-//     try {
-//       const updated = await updateCategoryApi(category);
-//       set((state) => ({
-//         categories: state.categories
-//           .map((c) => (c.id === updated.id ? updated : c))
-//           .sort((a, b) => a.name.localeCompare(b.name)),
-//       }));
-//     } catch (e) {
-//       console.error("Error updating category:", e);
-//     } finally {
-//       set({ isLoading: false });
-//     }
-//   },
-
-//   deleteCategory: async (id) => {
-//     set({ isLoading: true });
-//     try {
-//       await deleteCategoryApi(id);
-//       set((state) => ({
-//         categories: state.categories.filter((c) => c.id !== id),
-//       }));
-//     } catch (e) {
-//       console.error("Error deleting category:", e);
-//     } finally {
-//       set({ isLoading: false });
-//     }
-//   },
-
-//   clearCategories: () => set({ categories: [] }),
-// }));

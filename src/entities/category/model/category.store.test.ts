@@ -1,155 +1,115 @@
-// // --- MOCKS ---
-// jest.mock("@/shared/lib/api", () => ({
-//   api: { get: jest.fn(), post: jest.fn(), patch: jest.fn(), delete: jest.fn() },
-// }));
-// jest.mock("@/shared/config/config", () => ({
-//   API_URL: "http://localhost:3001",
-// }));
+// --- MOCKS ---
+jest.mock("@/entities/user/model/user.store", () => ({
+  useUserStore: {
+    getState: jest.fn(() => ({
+      user: {
+        id: 1,
+        email: "user@test.com",
+        firstName: "Test",
+        lastName: "User",
+        avatar: "",
+      },
+      setUser: jest.fn(),
+    })),
+  },
+}));
 
-// jest.mock("@/entities/user/model/user.store", () => ({
-//   useUserStore: {
-//     getState: () => ({
-//       user: {
-//         id: 1,
-//         email: "user@test.com",
-//         firstName: "Test",
-//         lastName: "User",
-//         avatar: "",
-//       },
-//       setUser: jest.fn(),
-//     }),
-//   },
-// }));
+// --- IMPORTS ---
+import { act } from "@testing-library/react";
+import { useCategoriesStore } from "./category.store";
+import { Category } from "@/entities/category/model/category.types";
 
-// jest.mock("./category.api");
+// --- TESTS ---
+describe("Categories Store (demo)", () => {
+  const STORAGE_KEY = "demoCategories";
 
-// // --- IMPORTS ---
-// import { act } from "@testing-library/react";
-// import { useCategoriesStore } from "./category.store";
-// import { Category } from "@/entities/category/model/category.types";
-// import {
-//   getCategories,
-//   createCategory,
-//   updateCategoryApi,
-//   deleteCategoryApi,
-// } from "./category.api";
+  const demoCats: Category[] = [
+    { id: "1", name: "Food", type: "Expenses", userId: 1, isDeleted: false },
+    { id: "2", name: "Salary", type: "Income", userId: 1, isDeleted: false },
+    {
+      id: "3",
+      name: "OtherUserCat",
+      type: "Income",
+      userId: 2,
+      isDeleted: false,
+    },
+  ];
 
-// // --- TESTS ---
-// describe("Categories Store", () => {
-//   const mockCategories: Category[] = [
-//     { id: "1", name: "Food", type: "Expenses", userId: 1 },
-//     { id: "2", name: "Salary", type: "Income", userId: 1 },
-//     { id: "3", name: "OtherUserCat", type: "Income", userId: 2 },
-//   ];
+  beforeEach(() => {
+    localStorage.clear();
+    useCategoriesStore.setState({ categories: [], isLoading: false });
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(demoCats));
+  });
 
-//   beforeEach(() => {
-//     jest.clearAllMocks();
-//     useCategoriesStore.setState({ categories: [], isLoading: false });
-//   });
+  // --- FETCH ---
+  it("fetches categories for current user", async () => {
+    await act(async () => {
+      await useCategoriesStore.getState().fetchCategories();
+    });
 
-//   // --- FETCH ---
-//   it("should fetch categories for current user", async () => {
-//     (getCategories as jest.Mock).mockResolvedValue(mockCategories);
+    const state = useCategoriesStore.getState();
+    expect(state.categories).toHaveLength(2); // только userId = 1
+    expect(state.categories.map((c) => c.name)).toEqual(["Food", "Salary"]);
+    expect(state.isLoading).toBe(false);
+  });
 
-//     await act(async () => {
-//       await useCategoriesStore.getState().fetchCategories();
-//     });
+  // --- ADD ---
+  it("adds a new category", async () => {
+    await act(async () => {
+      await useCategoriesStore.getState().addCategory({
+        name: "Books",
+        type: "Expenses",
+        userId: 1,
+      });
+    });
 
-//     const state = useCategoriesStore.getState();
-//     expect(getCategories).toHaveBeenCalled();
-//     expect(state.categories).toHaveLength(2);
-//     expect(state.categories[0].name).toBe("Food");
-//     expect(state.categories[1].name).toBe("Salary");
-//     expect(state.isLoading).toBe(false);
-//   });
+    const state = useCategoriesStore.getState();
+    expect(state.categories.some((c) => c.name === "Books")).toBe(true);
 
-//   // --- ADD ---
-//   it("should add a new category", async () => {
-//     const newCat: Category = {
-//       id: "4",
-//       name: "Books",
-//       type: "Expenses",
-//       userId: 1,
-//     };
-//     (createCategory as jest.Mock).mockResolvedValue(newCat);
+    const stored = JSON.parse(localStorage.getItem(STORAGE_KEY)!);
+    expect(stored.some((c: Category) => c.name === "Books")).toBe(true);
+  });
 
-//     await act(async () => {
-//       await useCategoriesStore.getState().addCategory({
-//         name: "Books",
-//         type: "Expenses",
-//         userId: 1,
-//       });
-//     });
+  // --- UPDATE ---
+  it("updates an existing category", async () => {
+    await act(async () => {
+      await useCategoriesStore.getState().fetchCategories();
+      await useCategoriesStore.getState().updateCategory({
+        id: "1",
+        name: "Groceries",
+        type: "Expenses",
+        userId: 1,
+        isDeleted: false,
+      });
+    });
 
-//     const state = useCategoriesStore.getState();
-//     expect(createCategory).toHaveBeenCalledWith({
-//       name: "Books",
-//       type: "Expenses",
-//       userId: 1,
-//     });
-//     expect(state.categories.some((c) => c.name === "Books")).toBe(true);
-//     expect(state.isLoading).toBe(false);
-//   });
+    const state = useCategoriesStore.getState();
+    expect(state.categories.find((c) => c.id === "1")?.name).toBe("Groceries");
 
-//   // --- UPDATE ---
-//   it("should update an existing category", async () => {
-//     useCategoriesStore.setState({
-//       categories: [{ id: "1", name: "Food", userId: 1, type: "Expenses" }],
-//     });
+    const stored = JSON.parse(localStorage.getItem(STORAGE_KEY)!);
+    expect(stored.find((c: Category) => c.id === "1")?.name).toBe("Groceries");
+  });
 
-//     const updatedCat: Category = {
-//       id: "1",
-//       name: "Groceries",
-//       userId: 1,
-//       type: "Expenses",
-//     };
-//     (updateCategoryApi as jest.Mock).mockResolvedValue(updatedCat);
+  // --- DELETE ---
+  it("deletes a category", async () => {
+    await act(async () => {
+      await useCategoriesStore.getState().deleteCategory("1");
+    });
 
-//     await act(async () => {
-//       await useCategoriesStore.getState().updateCategory(updatedCat);
-//     });
+    const state = useCategoriesStore.getState();
+    expect(state.categories.find((c) => c.id === "1")).toBeUndefined();
 
-//     const state = useCategoriesStore.getState();
-//     expect(updateCategoryApi).toHaveBeenCalledWith(updatedCat);
-//     expect(state.categories[0].name).toBe("Groceries");
-//     expect(state.isLoading).toBe(false);
-//   });
+    const stored = JSON.parse(localStorage.getItem(STORAGE_KEY)!);
+    expect(stored.find((c: Category) => c.id === "1")?.isDeleted).toBe(true);
+  });
 
-//   // --- DELETE ---
-//   it("should delete a category by id", async () => {
-//     useCategoriesStore.setState({
-//       categories: [
-//         { id: "1", name: "Food", type: "Expenses", userId: 1 },
-//         { id: "2", name: "Transport", type: "Expenses", userId: 1 },
-//       ],
-//     });
+  // --- CLEAR ---
+  it("clears categories", () => {
+    act(() => {
+      useCategoriesStore.getState().clearCategories();
+    });
 
-//     (deleteCategoryApi as jest.Mock).mockResolvedValue(undefined);
-
-//     await act(async () => {
-//       await useCategoriesStore.getState().deleteCategory("1");
-//     });
-
-//     const state = useCategoriesStore.getState();
-//     expect(deleteCategoryApi).toHaveBeenCalledWith("1");
-//     expect(state.categories).toHaveLength(1);
-//     expect(state.categories[0].id).toBe("2");
-//     expect(state.isLoading).toBe(false);
-//   });
-
-//   // --- CLEAR ---
-//   it("should clear categories", () => {
-//     useCategoriesStore.setState({
-//       categories: [
-//         { id: "1", name: "Food", type: "Expenses", userId: 1 },
-//         { id: "2", name: "Transport", type: "Expenses", userId: 1 },
-//       ],
-//     });
-
-//     act(() => {
-//       useCategoriesStore.getState().clearCategories();
-//     });
-
-//     expect(useCategoriesStore.getState().categories).toEqual([]);
-//   });
-// });
+    const state = useCategoriesStore.getState();
+    expect(state.categories).toEqual([]);
+  });
+});

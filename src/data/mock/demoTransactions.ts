@@ -1,8 +1,7 @@
 import { Transaction } from "@/entities/transaction/model/transaction.types";
 
-// Пример демо-транзакций
 export const demoTransactions: Transaction[] = [
-  // Январь
+  // January
   {
     id: "txn-2025-01-01",
     userId: 1,
@@ -49,7 +48,7 @@ export const demoTransactions: Transaction[] = [
     description: "Rent",
   },
 
-  // Февраль
+  // February
   {
     id: "txn-2025-02-01",
     userId: 1,
@@ -87,7 +86,7 @@ export const demoTransactions: Transaction[] = [
     description: "Rent",
   },
 
-  // Март
+  // March
   {
     id: "txn-2025-03-01",
     userId: 1,
@@ -134,7 +133,7 @@ export const demoTransactions: Transaction[] = [
     description: "Rent",
   },
 
-  // Апрель
+  // April
   {
     id: "txn-2025-04-01",
     userId: 1,
@@ -181,7 +180,7 @@ export const demoTransactions: Transaction[] = [
     description: "Rent",
   },
 
-  // Май
+  // May
   {
     id: "txn-2025-05-01",
     userId: 1,
@@ -228,7 +227,7 @@ export const demoTransactions: Transaction[] = [
     description: "Rent",
   },
 
-  // Июнь
+  // June
   {
     id: "txn-2025-06-01",
     userId: 1,
@@ -275,7 +274,7 @@ export const demoTransactions: Transaction[] = [
     description: "Rent",
   },
 
-  // Июль
+  // July
   {
     id: "txn-2025-07-01",
     userId: 1,
@@ -322,7 +321,7 @@ export const demoTransactions: Transaction[] = [
     description: "Rent",
   },
 
-  // Август
+  // August
   {
     id: "txn-2025-08-01",
     userId: 1,
@@ -369,7 +368,7 @@ export const demoTransactions: Transaction[] = [
     description: "Rent",
   },
 
-  // Сентябрь
+  // September
   {
     id: "txn-2025-09-01",
     userId: 1,
@@ -416,7 +415,7 @@ export const demoTransactions: Transaction[] = [
     description: "Rent",
   },
 
-  // Октябрь
+  // October
   {
     id: "txn-2025-10-01",
     userId: 1,
@@ -463,7 +462,7 @@ export const demoTransactions: Transaction[] = [
     description: "Rent",
   },
 
-  // Ноябрь (до 8-го числа)
+  // November
   {
     id: "txn-2025-11-01",
     userId: 1,
@@ -484,7 +483,7 @@ export const demoTransactions: Transaction[] = [
   },
 
   // User 2
-  // Сентябрь
+  // September
   {
     id: "txn-2025-09-01-2",
     userId: 2,
@@ -504,12 +503,12 @@ export const demoTransactions: Transaction[] = [
     description: "Taxi ride",
   },
 
-  // Октябрь
+  // October
   {
     id: "txn-2025-10-01-2",
     userId: 2,
     categoryId: "817a62d7-ec60-40c8-ac27-0c3c59d60e9e",
-    amount: 2500,
+    amount: 2000,
     type: "Income",
     date: "2025-10-05",
     description: "Salary",
@@ -533,7 +532,7 @@ export const demoTransactions: Transaction[] = [
     description: "Cash withdrawal",
   },
 
-  // Ноябрь
+  // November
   {
     id: "txn-2025-11-01-2",
     userId: 2,
@@ -552,11 +551,18 @@ export const demoTransactions: Transaction[] = [
     date: "2025-11-10",
     description: "Public transport",
   },
+    {
+    id: "txn-2025-11-03-2",
+    userId: 2,
+    categoryId: "78a376b2-c18d-439d-84bf-ae7725646b20",
+    amount: 800,
+    type: "Expenses",
+    date: "2025-11-13",
+    description: "Cash withdrawal",
+  },
 ];
 
-// Функция для получения транзакций
 export const getDemoTransactions = async (): Promise<Transaction[]> => {
-  // можно имитировать задержку API
   return new Promise((resolve) =>
     setTimeout(() => resolve(demoTransactions), 200)
   );
