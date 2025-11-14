@@ -60,24 +60,26 @@ const TopbarSearch: React.FC = () => {
           onFocus={() => setIsOpen(true)}
         />
       </div>
-      <Dropdown
-        options={filtered.map((f) => f.label)}
-        value={query}
-        onChange={(label) => {
-          const item = filtered.find((f) => f.label === label);
-          if (!item) return;
-          handleSelect(item);
-        }}
-        isOpen={isOpen}
-        onToggle={() => setIsOpen((prev) => !prev)}
-        onClose={() => setIsOpen(false)}
-        placeholder="Search"
-        wrapperClassName="topbar__search-dropdown-wrapper"
-        buttonClassName="topbar__search-btn"
-        listClassName="topbar__search-list"
-        itemClassName="topbar__search-item"
-        showAllOption={false}
-      />
+      {isOpen && filtered.length > 0 && (
+        <Dropdown
+          options={filtered.map((f) => f.label)}
+          value={query}
+          onChange={(label) => {
+            const item = filtered.find((f) => f.label === label);
+            if (!item) return;
+            handleSelect(item);
+          }}
+          isOpen={isOpen}
+          onToggle={() => setIsOpen((prev) => !prev)}
+          onClose={() => setIsOpen(false)}
+          placeholder="Search"
+          wrapperClassName="topbar__search-dropdown-wrapper"
+          buttonClassName="topbar__search-btn"
+          listClassName="topbar__search-list"
+          itemClassName="topbar__search-item"
+          showAllOption={false}
+        />
+      )}
     </div>
   );
 };
