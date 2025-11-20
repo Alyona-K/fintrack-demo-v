@@ -39,13 +39,28 @@ function ProfileBanner() {
 
       const avatarUrl = data.secure_url;
 
-      // --- SAVE AVATAR URL TO STORE AND DB ---
+      // --- SAVE AVATAR URL TO STORE ---
       await updateUser({ avatar: avatarUrl });
 
       // --- RESET FILE INPUT TO ALLOW REUPLOAD ---
       if (fileInputRef.current) fileInputRef.current.value = "";
     } catch (err) {
       console.error("Avatar upload error:", err);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  // --- REMOVE AVATAR ---
+  const handleRemoveAvatar = async () => {
+    if (!user) return;
+
+    try {
+      setIsUploading(true);
+
+      await updateUser({ avatar: "" });
+    } catch (err) {
+      console.error("Remove avatar error:", err);
     } finally {
       setIsUploading(false);
     }
@@ -62,13 +77,27 @@ function ProfileBanner() {
           height={396}
         />
         <div className="profile__user">
-          <img
-            className="profile__avatar"
-            src={user?.avatar || defaultAvatar}
-            alt="Profile avatar"
-            width={200}
-            height={200}
-          />
+          <div className="profile__avatar-wrap">
+            <img
+              className="profile__avatar-img"
+              src={user?.avatar || defaultAvatar}
+              alt="Profile avatar"
+              width={200}
+              height={200}
+            />
+          </div>
+          {user?.avatar && (
+            <button
+              className="profile__remove-btn"
+              type="button"
+              onClick={handleRemoveAvatar}
+              disabled={isUploading}
+            >
+              <svg className="profile__remove-icon" width={16} height={16}>
+                <use xlinkHref={`${sprite}#close-icon`} />
+              </svg>
+            </button>
+          )}
           <button
             className="profile__edit-btn"
             type="button"
