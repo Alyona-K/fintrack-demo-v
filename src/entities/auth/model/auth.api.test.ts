@@ -25,7 +25,6 @@ describe("authApi (demo)", () => {
   };
 
   beforeEach(() => {
-    // создаем свежий массив для каждого теста
     demoUsers.length = 0;
     demoUsers.push(
       {
