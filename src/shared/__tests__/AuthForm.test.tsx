@@ -1,5 +1,4 @@
 // --- MOCKS ---
-jest.mock("@/assets/images/sprite.svg", () => "test-file-stub");
 jest.mock("./Input.scss", () => ({}));
 jest.mock("./AuthForm.scss", () => ({}));
 

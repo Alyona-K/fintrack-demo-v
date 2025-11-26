@@ -1,6 +1,3 @@
-// MOCK SVG
-jest.mock("@/assets/images/sprite.svg", () => "test-file-stub");
-
 // MOCK MODAL
 jest.mock("@/shared/ui/Modal", () => ({
   __esModule: true,

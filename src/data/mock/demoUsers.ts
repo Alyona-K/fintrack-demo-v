@@ -15,7 +15,7 @@ export const demoUsers: User[] = [
     email: "demo2@email.com",
     password: "$2b$10$lY3PXkQI0DeXtBVpQIAKGuT3D.as8w7rXp.T5lGQ72KcRfpC3hOVO",
     firstName: "Alex",
-    lastName: "Bennett",
+    lastName: "Robertson",
     avatar:
       "https://res.cloudinary.com/dlz6x4ygk/image/upload/v1762525450/fintrack/avatars/male-avatar_dgsop6.png",
     location: "USA",

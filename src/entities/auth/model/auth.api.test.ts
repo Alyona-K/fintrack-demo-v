@@ -25,10 +25,28 @@ describe("authApi (demo)", () => {
   };
 
   beforeEach(() => {
+    // создаем свежий массив для каждого теста
     demoUsers.length = 0;
-    demoUsers.push(testUser);
+    demoUsers.push(
+      {
+        id: 999,
+        email: "alice@test.com",
+        firstName: "Alice",
+        lastName: "Smith",
+        avatar: "avatar.png",
+        location: "NY",
+      },
+      {
+        id: 2,
+        email: "demo2@email.com",
+        firstName: "Alex",
+        lastName: "Robertson",
+        avatar: "",
+        location: "",
+        password: "demo123456",
+      }
+    );
 
-    // Мокаем setUser
     mockedUserStore.getState.mockReturnValue({
       user: null,
       setUser: jest.fn(),
@@ -77,6 +95,19 @@ describe("authApi (demo)", () => {
       response.user
     );
     expect(demoUsers.find((u) => u.email === "bob@test.com")).toBeTruthy();
+  });
+
+  it("register throws on duplicate email", async () => {
+    const credentials: RegisterCredentials = {
+      email: "demo2@email.com",
+      password: "demo123456",
+      firstName: "Alex",
+      lastName: "Robertson",
+    };
+
+    await expect(authApi.register(credentials)).rejects.toThrow(
+      "User with this email already exists"
+    );
   });
 
   // --- GET CURRENT USER ---
